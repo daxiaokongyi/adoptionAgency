@@ -9,20 +9,25 @@
         <h1 class="text-center">Add A New Pet</h1>
         <div class="row justify-content-center">
             <div class="col-md-8">
-                <form method="POST">
+                <form method="POST" enctype="multipart/form-data">
                     {{form.hidden_tag()}}
 
                     {% for field in form if field.widget.input_type != 'hidden' %}
                         <div class="form-group">
-                            {{field.label}}:
-                            {{field(class_="form-control")}}
-                            {% for err in field.errors %}
-                            <small class="form-text text-danger">
-                                {{err}}
-                            </small>
-                            {% endfor %}
+                            {% if field.id != 'file' %}
+                                {{field.label}}:
+                                {{field(class_="form-control")}}
+                                {% for err in field.errors %}
+                                <small class="form-text text-danger">
+                                    {{err}}
+                                </small>
+                                {% endfor %}
+                            {% endif %}
                         </div>  
                     {% endfor%}
+                    <div class="form-group">
+                        {{form.file}}
+                    </div>
                     <button class="btn btn-success">Submit</button>
                     <a class="btn btn-info" href="/">Back to Pet List</a>
                 </form>

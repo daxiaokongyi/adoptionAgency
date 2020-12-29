@@ -1,7 +1,10 @@
 from flask import Flask, render_template, redirect, flash
 from flask_debugtoolbar import DebugToolbarExtension
+from flask_uploads import configure_uploads, IMAGES, UploadSet
 from models import db, connect_db, Pet
-from forms import AddPetForm
+from forms import AddPetForm, EditPetForm
+from werkzeug.utils import secure_filename
+from werkzeug.datastructures import FileStorage
 
 app = Flask(__name__)
 
@@ -10,6 +13,11 @@ app.config['DEBUG_TB_INTERCEPT_REDIRECTS'] = False
 app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql:///adopt'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SQLALCHEMY_ECHO'] = False
+app.config['UPLOADED_IMAGES_DEST'] = 'static'
+
+images = UploadSet('images', IMAGES)
+configure_uploads(app, images)
+
 debug = DebugToolbarExtension(app)
 
 connect_db(app)
@@ -24,19 +32,26 @@ def home():
 def add_pet():
     """Add a pet to the list"""
     form = AddPetForm()
-
     if form.validate_on_submit():
-        name = form.name.data
-        species = form.species.data
-        photo_url = form.photo_url.data
-        age = form.age.data
-        notes = form.notes.data
-        available = form.available.data
+        # name = form.name.data
+        # species = form.species.data
+        # photo_url = form.photo_url.data
+        # age = form.age.data
+        # notes = form.notes.data
+        # available = form.available.data
 
-        pet = Pet(name = name, species = species, photo_url = photo_url, age = age, notes = notes, available = available)
-        db.session.add(pet)
+        # pet = Pet(name = name, species = species, photo_url = photo_url, age = age, notes = notes, available = available)
+
+        data = {k: v for k,v in form.data.items() if k != 'csrf_token' and k != 'file'}
+        new_pet = Pet(**data)
+        filename = images.save(form.file.data)
+
+        if filename != None:
+            new_pet.photo_url = f'static/{filename}'
+
+        db.session.add(new_pet)
         db.session.commit()
-        flash(f'{pet.name} is added.')
+        flash(f'{new_pet.name} is added.')
         return redirect('/')
     else:
         return render_template('add_pet.html', form = form)
@@ -51,13 +66,10 @@ def pet_detail(id):
 def pet_edit(id):
     """Edit a pet"""
     pet = Pet.query.get_or_404(id)
-    form = AddPetForm(obj = pet)
+    form = EditPetForm(obj = pet)
 
     if form.validate_on_submit():
-        pet.name = form.name.data
-        pet.species = form.species.data
         pet.photo_url = form.photo_url.data
-        pet.age = form.age.data
         pet.notes = form.notes.data
         pet.available = form.available.data
 
