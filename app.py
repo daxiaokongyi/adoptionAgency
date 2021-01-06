@@ -44,10 +44,13 @@ def add_pet():
 
         data = {k: v for k,v in form.data.items() if k != 'csrf_token' and k != 'file'}
         new_pet = Pet(**data)
-        filename = images.save(form.file.data)
-
-        if filename != None:
+        
+        if form.file.data.filename != '':
+            filename = images.save(form.file.data)
+            # if filename != None:
             new_pet.photo_url = f'static/{filename}'
+        else:
+            new_pet.photo_url = Pet.image_url(new_pet)
 
         db.session.add(new_pet)
         db.session.commit()
